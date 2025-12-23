@@ -1,0 +1,21 @@
+# Git and Docker
+.git
+.gitignore
+.dockerignore
+.env
+.DS_Store
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Data & Storage (Don't bake data into the image)
+data/
+storage/
+output/

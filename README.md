@@ -1,71 +1,36 @@
 # 🔍 Visual-First Financial Document Intelligence Agent
 
-> **Multimodal RAG system that uses Computer Vision + LLMs to extract and query financial data from complex PDFs**
+> **Enterprise-Grade Multimodal RAG system that uses Computer Vision + LLMs to analyze complex financial PDFs.**
+
+![UI Demo](demo_ui.png)
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.52-FF4B4B.svg)](https://streamlit.io)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.42-FF4B4B.svg)](https://streamlit.io)
 [![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.12-000000.svg)](https://llamaindex.ai)
-[![OpenRouter](https://img.shields.io/badge/OpenRouter-AI-purple.svg)](https://openrouter.ai)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
 
 ---
 
 ## 🎯 Problem Statement
 
-Financial analysts spend **hours** manually cross-referencing data between narrative text and tables in documents like 10-K filings. Traditional OCR solutions fail because they:
+Financial analysts spend **hours** manually cross-referencing data between narrative text and tables in 10-K filings. Traditional RAG fails because:
 
-- Treat documents as plain text (losing table structure)
-- Can't handle complex layouts with charts and multi-column formats
-- Don't understand financial context or "read" tables visually
+- OCR loses table structure.
+- Charts and graphs are ignored.
+- Context is lost between pages.
 
-## 💡 Solution
+## 💡 Solution: The "Agentic" Approach
 
-A **Vision-First RAG Pipeline** that:
+This is not just a chat bot. It is a **Visual Intelligence Pipeline**:
 
-1. **Ingests** financial PDFs (10-K filings).
-2. **Extracts** structured data using **GPT-4o-mini** (via OpenRouter) and strict PDF parsing.
-3. **Summarizes** tables visually using Vision-Language Models.
-4. **Indexes** visual and textual content into a local vector database.
-5. **Answers** natural language queries and **shows the actual source table image** for verification.
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────┐
-│   PDF File  │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────┐
-│  Ingestion Engine   │
-│  (src/rag/ingest)   │
-│  • PDF Parsing      │
-│  • Vision Summarizer│
-└──────┬──────────────┘
-       │ Text Chunks + Table Summaries
-       ▼
-┌─────────────────────┐
-│  Vector Database    │  ← LlamaIndex + Embeddings
-│  (Local Storage)    │
-└──────┬──────────────┘
-       │
-       ▼
-┌─────────────────────┐       ┌─────────────────┐
-│  Query Engine       │ ◄──── ►  OpenRouter LLM │
-│  (src/rag/query)    │       │ (GPT-4o/Gemini) │
-└──────┬──────────────┘       └─────────────────┘
-       │
-       ▼
-┌─────────────────────┐
-│  Chat Interface     │  ← Streamlit UI
-│  (app.py)           │
-└─────────────────────┘
-```
+1. **Split-Screen Interface**: Read the original PDF while chatting with the AI.
+2. **Vision-First Ingestion**: Uses **YOLOv8** to detect tables and **GPT-4o/Gemini** to "see" and summarize them.
+3. **Visual Citations**: Every answer includes the **exact image** of the table used as source.
+4. **Parallel Processing**: Ingests massive documents 5x faster using concurrent vision threads.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local)
 
 ### 1. Prerequisites
 
@@ -79,116 +44,74 @@ A **Vision-First RAG Pipeline** that:
 git clone https://github.com/Mukundh0007/agentic-rag.git
 cd agentic-rag
 
-# Install dependencies with uv (fastest)
+# Install dependencies
 uv sync
-
-# Or with pip
-pip install -r requirements.txt
 ```
 
-### 3. Configuration
+### 3. Setup Models
 
-Create a `.env` file in the root directory:
-
-```env
-OPENROUTER_API_KEY=sk-or-v1-xxxxxxxx...
-```
-
-### 4. Usage
-
-We provide a central controller `main.py` for most tasks, but the computer vision pipeline requires initialization.
-
-**Step 1: Setup Models**
-Download YOLOv8 weights and the fine-tuned table detector.
+Download the YOLOv8 weights and table detector (only once).
 
 ```bash
 uv run python src/download_weights.py
 ```
 
-**Step 2: Extract Tables (Computer Vision)**
-To verify the environment, run:
+### 4. Run the App
 
-```bash
-uv run python src/verify.py
-```
-
-Then, run the YOLOv8 pipeline to crop tables from your PDF.
-```bash
-uv run python src/vision/vision_processor.py
-```
-
-*(This saves images to `data/processed_tables/`)*
-
-**Step 3: Ingest Data**
-Process the PDF text and the extracted table images into the vector index.
-
-```bash
-uv run python main.py --ingest
-```
-
-**Step B: Launch Web App (The "Wow" Factor)**
-Start the visual chat interface.
+Launch the full product suite.
 
 ```bash
 uv run python main.py --app
 ```
 
-**Step C: CLI Query (Optional)**
-Run a quick test query from the terminal.
+* **Login**: `admin` / `admin` (Demo Mode)
+- **Workflow**: Upload PDF -> Click "Process" -> Chat.
+
+---
+
+## 🐳 Docker Deployment (Cloud Ready)
+
+Run the entire application in a container with one command.
 
 ```bash
-uv run python main.py --query "What are the primary risk factors?"
+# Build
+docker build -t agentic-rag .
+
+# Run
+docker run -p 8501:8501 -e OPENROUTER_API_KEY=your_key agentic-rag
 ```
+
+Access at `http://localhost:8501`.
 
 ---
 
-## 📂 Project Structure
+## 🏗️ Architecture
 
 ```
-agentic-rag/
-├── 📄 main.py                      # 🎮 Central CLI controller
-├── 📄 app.py                       # 🖥️ Streamlit Web Application
-├── 📄 pyproject.toml               # Dependency configuration
-├── 📄 requirements.txt             # Pip requirements
-├── 📄 README.md                    # Documentation
-│
-├── 📂 src/
-│   └── 📂 rag/
-│       ├── 📄 ingest.py            # 🏗️ Ingestion pipeline (PDF -> Vector DB)
-│       ├── 📄 query.py             # 🔍 Retrieval & Query logic
-│       └── 📄 openrouter_client.py # 🔌 Custom LlamaIndex adapter for OpenRouter
-│
-├── 📂 data/
-│   ├── 📄 apple_10k.pdf            # Source Document
-│   └── 📂 processed_tables/        # Extracted table images
-│
-└── 📂 storage/                     # Local Vector Store (created after ingest)
+┌─────────────┐       ┌────────────────────┐
+│  Upload PDF │──────►│  Vision Processor  │
+└─────────────┘       │  (YOLOv8 + VLM)    │
+                      └─────────┬──────────┘
+                                │ Table Summaries
+                                ▼
+┌─────────────┐       ┌────────────────────┐
+│   FastAPI   │◄──────│   Vector Index     │
+│  Back-End   │       │  (LlamaIndex)      │
+└─────────────┘       └────────────────────┘
+       ▲
+       │
+┌─────────────┐
+│  Streamlit  │
+│  Frontend   │
+└─────────────┘
 ```
 
----
+## ✨ Key Features (V2)
 
-## ✨ Key Features
-
-- **Robust PDF Parsing**: Uses `PDFReader` for accurate text extraction (no garbage binary text).
-- **Visual Verification**: The chatbot displays the **actual images** of the tables it used to answer your question.
-- **Smart Routing**: `main.py` handles CLI commands and app launching seamlessly.
-- **Cost Effective**: Optimized to use efficient models like `gpt-4o-mini` via OpenRouter.
-
----
-
-## 📊 Example Interaction
-
-**User Query**: *"What was the total net sales in 2024?"*
-
-**AI Response**:
-> Apple's total net sales in 2024 were **$391.04 billion**.
-
-**Verified Sources**:
-
-- `p23_table_5.png` (Shows the Income Statement)
-- `p32_table_13.png` (Shows Segment Breakdown)
-
-*(The UI displays these images automatically)*
+- **Sidebar Admin**: Secure file management and processing status.
+- **Dynamic Indexing**: Creates a fresh Knowledge Graph for every uploaded document.
+- **Dark Mode Native**: Optimized for high-contrast professional environments.
+- **Split View**: 50/50 Layout for Analyst productivity.
 
 ---
 

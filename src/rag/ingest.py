@@ -84,21 +84,26 @@ def summarize_table_image(image_path: str) -> str:
         print(f"Error summarising {image_path}: {e}")
         return f"Error processing table: {os.path.basename(image_path)}"
 
-def build_pipeline():
-    print("🚀 Starting RAG Ingestion Pipeline...")
+def build_pipeline(pdf_path, table_output_dir, persist_dir="./storage"):
+    """
+    Args:
+        pdf_path (str): Path to the uploaded PDF.
+        table_output_dir (str): Directory where extracted table images are located.
+        persist_dir (str): Directory to save the vector index.
+    """
+    print(f"🚀 Starting RAG Ingestion Pipeline for: {pdf_path}")
 
     # 1. Load & Chunk PDF Text
     # ---------------------------
     from llama_index.readers.file import PDFReader
     
-    pdf_path = os.path.abspath("data/apple_10k.pdf")
     if not os.path.exists(pdf_path):
         print(f"❌ PDF not found at {pdf_path}")
-        return
+        return None
 
-    print(f"📄 Loading PDF: {pdf_path}...")
+    print(f"📄 Loading Text from PDF...")
     
-    # Force PDF parsing using the explicit PDFReader
+    # Force PDF parsing
     parser = PDFReader()
     file_extractor = {".pdf": parser}
     reader = SimpleDirectoryReader(input_files=[pdf_path], file_extractor=file_extractor)
@@ -110,35 +115,46 @@ def build_pipeline():
     text_nodes = splitter.get_nodes_from_documents(pdf_docs)
     print(f"✅ Generated {len(text_nodes)} text nodes from PDF.")
 
-    # 2. Multimodal Table Processing
+    # 2. Multimodal Table Processing (Parallelized)
     # ---------------------------
-    table_dir = os.path.abspath("data/processed_tables")
-    image_files = glob.glob(os.path.join(table_dir, "*.png"))
-    
+    image_files = glob.glob(os.path.join(table_output_dir, "*.png"))
     table_nodes = []
-    print(f"🖼️  Found {len(image_files)} table images. Starting VLM processing (this may take time)...")
-
-    # Limit for demo purposes if needed, but intended for all
-    for idx, img_path in enumerate(image_files):
-        print(f"   [{idx+1}/{len(image_files)}] Processing {os.path.basename(img_path)}...", end="\r")
-        
-        # Call VLM
-        table_summary = summarize_table_image(img_path)
-        
-        # Create Node
-        node = TextNode(text=table_summary)
-        
-        # Inject Metadata (Crucial)
-        node.metadata = {
-            "image_path": img_path,  # Absolute path preferred for retrieval
-            "file_name": os.path.basename(img_path),
-            "type": "table_image",
-            "page_num": "unknown" # Could parse from filename like p23_table_1
-        }
-        
-        table_nodes.append(node)
     
-    print(f"\n✅ Generated {len(table_nodes)} table nodes from images.")
+    if image_files:
+        print(f"🖼️  Found {len(image_files)} table images. Starting Parallel VLM processing...")
+        
+        import concurrent.futures
+
+        # Helper for parallel execution
+        def process_image(img_path):
+            try:
+                summary = summarize_table_image(img_path)
+                return img_path, summary
+            except Exception as e:
+                print(f"Error processing {img_path}: {e}")
+                return img_path, None
+
+        # Run with ThreadPool
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_img = {executor.submit(process_image, img): img for img in image_files}
+            
+            for i, future in enumerate(concurrent.futures.as_completed(future_to_img)):
+                img_path, summary = future.result()
+                print(f"   [{i+1}/{len(image_files)}] Analyzed {os.path.basename(img_path)}", end="\r")
+                
+                if summary:
+                    node = TextNode(text=summary)
+                    node.metadata = {
+                        "image_path": img_path,
+                        "file_name": os.path.basename(img_path),
+                        "type": "table_image",
+                        "page_num": "unknown" 
+                    }
+                    table_nodes.append(node)
+
+        print(f"\n✅ Generated {len(table_nodes)} table nodes from images.")
+    else:
+        print("ℹ️  No table images found to process.")
 
     # 3. Embed Everything & 4. Persist
     # ---------------------------
@@ -152,10 +168,15 @@ def build_pipeline():
     )
     
     # Save to Disk
-    persist_dir = "./storage"
     index.storage_context.persist(persist_dir=persist_dir)
     print(f"💾 Index persisted to {persist_dir}")
     print("🎉 Pipeline Finish!")
+    return index
 
 if __name__ == "__main__":
-    build_pipeline()
+    # Default for CLI compatibility
+    build_pipeline(
+        pdf_path=os.path.abspath("data/apple_10k.pdf"),
+        table_output_dir=os.path.abspath("data/processed_tables"),
+        persist_dir="./storage"
+    )

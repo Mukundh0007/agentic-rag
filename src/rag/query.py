@@ -32,14 +32,13 @@ embed_model = OpenRouterEmbedding(
 Settings.llm = llm
 Settings.embed_model = embed_model
 
-def query_system(user_query: str) -> dict:
+def query_system(user_query: str, persist_dir: str = "./storage") -> dict:
     """
     Takes a user query, retrieves relevant context (text + table summaries),
     and returns the answer along with source image paths.
     """
     
     # 1. Load the Index
-    persist_dir = "./storage"
     if not os.path.exists(persist_dir) or not os.listdir(persist_dir):
         return {"response": "Error: Storage not found. Run ingest.py first.", "images": []}
 
