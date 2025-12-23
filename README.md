@@ -113,8 +113,3 @@ Access at `http://localhost:8501`.
 - **Dark Mode Native**: Optimized for high-contrast professional environments.
 - **Split View**: 50/50 Layout for Analyst productivity.
 
----
-
-## 📝 License
-
-MIT License
