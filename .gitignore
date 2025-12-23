@@ -8,3 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment variables
+.env
+
+# Data
+data/
+!data/apple_10k.pdf
+!data/processed_tables/
+models/
+
+# Storage
+storage/
