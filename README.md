@@ -1,9 +1,9 @@
 # 🔍 Visual-First Financial Document Intelligence Agent
 
-> **Enterprise-Grade Multimodal RAG system that uses Computer Vision + LLMs to analyze complex financial PDFs.**
+> **Multimodal RAG system that uses Computer Vision + LLMs to analyze complex financial PDFs.**
 
 ![UI Demo](demo_ui.png)
-
+![UI Demo](demo_2.png)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.42-FF4B4B.svg)](https://streamlit.io)
 [![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.12-000000.svg)](https://llamaindex.ai)
