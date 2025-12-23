@@ -13,4 +13,5 @@ dependencies = [
     "pypdf>=5.0.0",
     "streamlit>=1.52.2",
     "llama-index-llms-openai-like>=0.5.3",
+    "llama-index-readers-file>=0.5.5",
 ]

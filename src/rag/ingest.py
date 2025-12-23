@@ -9,7 +9,10 @@ from llama_index.core import (
     Document,
 )
 from llama_index.core.node_parser import SentenceSplitter
-from openrouter_client import OpenRouterLLM, OpenRouterEmbedding
+try:
+    from src.rag.openrouter_client import OpenRouterLLM, OpenRouterEmbedding
+except ImportError:
+    from openrouter_client import OpenRouterLLM, OpenRouterEmbedding
 from llama_index.core.schema import TextNode
 
 # Load environment variables
@@ -36,15 +39,6 @@ Settings.llm = llm
 Settings.embed_model = embed_model
 Settings.chunk_size = 1024
 Settings.chunk_overlap = 20
-
-def encode_image(image_path):
-    """Encodes image to base64 string (if needed for direct API usage) or passes path."""
-    # LlamaIndex SimpleDirectoryReader or MultiModal LLMs handle reading usually.
-    # But for manual single-image prompts with LlamaIndex LLM interface, 
-    # we might need to load it. 
-    # However, standard OpenAI class in LlamaIndex deals with message content.
-    # We will use a helper to construct the multimodal message.
-    pass
 
 def summarize_table_image(image_path: str) -> str:
     """
@@ -95,13 +89,20 @@ def build_pipeline():
 
     # 1. Load & Chunk PDF Text
     # ---------------------------
+    from llama_index.readers.file import PDFReader
+    
     pdf_path = os.path.abspath("data/apple_10k.pdf")
     if not os.path.exists(pdf_path):
         print(f"❌ PDF not found at {pdf_path}")
         return
 
     print(f"📄 Loading PDF: {pdf_path}...")
-    reader = SimpleDirectoryReader(input_files=[pdf_path])
+    
+    # Force PDF parsing using the explicit PDFReader
+    parser = PDFReader()
+    file_extractor = {".pdf": parser}
+    reader = SimpleDirectoryReader(input_files=[pdf_path], file_extractor=file_extractor)
+    
     pdf_docs = reader.load_data()
     
     # Create Text Nodes (Chunks)

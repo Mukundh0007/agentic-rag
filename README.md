@@ -2,10 +2,10 @@
 
 > **Multimodal RAG system that uses Computer Vision + LLMs to extract and query financial data from complex PDFs**
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.52-FF4B4B.svg)](https://streamlit.io)
-[![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-00FFFF.svg)](https://github.com/ultralytics/ultralytics)
-[![Gemini](https://img.shields.io/badge/Gemini-1.5_Flash-4285F4.svg)](https://ai.google.dev/)
+[![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.12-000000.svg)](https://llamaindex.ai)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-AI-purple.svg)](https://openrouter.ai)
 
 ---
 
@@ -15,16 +15,17 @@ Financial analysts spend **hours** manually cross-referencing data between narra
 
 - Treat documents as plain text (losing table structure)
 - Can't handle complex layouts with charts and multi-column formats
-- Don't understand financial context
+- Don't understand financial context or "read" tables visually
 
 ## 💡 Solution
 
 A **Vision-First RAG Pipeline** that:
 
-1. **Detects** tables/charts using fine-tuned YOLOv8 object detection
-2. **Extracts** structured data using Gemini 1.5 Flash (multimodal LLM)
-3. **Indexes** visual and textual content into a vector database
-4. **Answers** natural language queries with source citations
+1. **Ingests** financial PDFs (10-K filings).
+2. **Extracts** structured data using **GPT-4o-mini** (via OpenRouter) and strict PDF parsing.
+3. **Summarizes** tables visually using Vision-Language Models.
+4. **Indexes** visual and textual content into a local vector database.
+5. **Answers** natural language queries and **shows the actual source table image** for verification.
 
 ---
 
@@ -37,21 +38,23 @@ A **Vision-First RAG Pipeline** that:
        │
        ▼
 ┌─────────────────────┐
-│  Vision Processor   │  ← YOLOv8 Table Detection
-│  (vision_processor) │
+│  Ingestion Engine   │
+│  (src/rag/ingest)   │
+│  • PDF Parsing      │
+│  • Vision Summarizer│
 └──────┬──────────────┘
-       │ Cropped Tables
-       ▼
-┌─────────────────────┐
-│  Multimodal Parser  │  ← Gemini 1.5 Flash
-│  (ingest.py)        │     (Vision → Text)
-└──────┬──────────────┘
-       │ Structured Summaries
+       │ Text Chunks + Table Summaries
        ▼
 ┌─────────────────────┐
 │  Vector Database    │  ← LlamaIndex + Embeddings
-│  (ChromaDB/Local)   │
+│  (Local Storage)    │
 └──────┬──────────────┘
+       │
+       ▼
+┌─────────────────────┐       ┌─────────────────┐
+│  Query Engine       │ ◄──── ►  OpenRouter LLM │
+│  (src/rag/query)    │       │ (GPT-4o/Gemini) │
+└──────┬──────────────┘       └─────────────────┘
        │
        ▼
 ┌─────────────────────┐
@@ -62,259 +65,114 @@ A **Vision-First RAG Pipeline** that:
 
 ---
 
-## � Project Structure
+## 🚀 Quick Start
+
+### 1. Prerequisites
+
+- Python 3.12+
+- `uv` (recommended) or `pip`
+- OpenRouter API Key
+
+### 2. Installation
+
+```bash
+git clone https://github.com/Mukundh0007/agentic-rag.git
+cd agentic-rag
+
+# Install dependencies with uv (fastest)
+uv sync
+
+# Or with pip
+pip install -r requirements.txt
+```
+
+### 3. Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-xxxxxxxx...
+```
+
+### 4. Usage
+
+We provide a central controller `main.py` for all tasks.
+
+**Step A: Ingest Data**
+Process the PDF and build the vector index.
+
+```bash
+uv run python main.py --ingest
+```
+
+*(This may take a few minutes as it uses Vision AI to analyze every table image).*
+
+**Step B: Launch Web App (The "Wow" Factor)**
+Start the visual chat interface.
+
+```bash
+uv run python main.py --app
+```
+
+**Step C: CLI Query (Optional)**
+Run a quick test query from the terminal.
+
+```bash
+uv run python main.py --query "What are the primary risk factors?"
+```
+
+---
+
+## 📂 Project Structure
 
 ```
 agentic-rag/
-├── 📄 README.md                    # Project documentation
-├── 📄 pyproject.toml               # UV package manager configuration
-├── 📄 requirements.txt             # Python dependencies
-├── 📄 uv.lock                      # UV lock file for reproducible builds
-├── 📄 .env                         # Environment variables (GOOGLE_API_KEY)
-├── 📄 .gitignore                   # Git ignore rules
-├── 📄 .python-version              # Python version specification
+├── 📄 main.py                      # 🎮 Central CLI controller
+├── 📄 app.py                       # 🖥️ Streamlit Web Application
+├── 📄 pyproject.toml               # Dependency configuration
+├── 📄 requirements.txt             # Pip requirements
+├── 📄 README.md                    # Documentation
 │
-├── 📄 app.py                       # 🎯 Main Streamlit web application
-├── 📄 main.py                      # CLI entry point
-├── 📄 bus.jpg                      # Sample test image
+├── 📂 src/
+│   └── 📂 rag/
+│       ├── 📄 ingest.py            # 🏗️ Ingestion pipeline (PDF -> Vector DB)
+│       ├── 📄 query.py             # 🔍 Retrieval & Query logic
+│       └── 📄 openrouter_client.py # 🔌 Custom LlamaIndex adapter for OpenRouter
 │
-├── 📂 src/                         # Source code modules
-│   ├── 📄 __init__.py
-│   ├── 📄 download_weights.py      # Script to download YOLOv8 model weights
-│   ├── 📄 verify.py                # Verification and testing utilities
-│   │
-│   ├── 📂 vision/                  # Computer Vision module
-│   │   ├── 📄 __init__.py
-│   │   └── 📄 vision_processor.py  # YOLOv8 table detection logic
-│   │
-│   └── 📂 rag/                     # RAG pipeline module
-│       └── 📄 __init__.py          # (ingest.py & query.py to be added)
+├── 📂 data/
+│   ├── 📄 apple_10k.pdf            # Source Document
+│   └── 📂 processed_tables/        # Extracted table images
 │
-├── 📂 data/                        # Data directory
-│   ├── 📄 apple_10k.pdf            # Sample financial document (Apple 10-K)
-│   └── 📂 processed_tables/        # Extracted table images (55 tables)
-│       ├── 📄 p1_table_0.png
-│       ├── 📄 p2_table_1.png
-│       ├── 📄 p3_table_2.png
-│       └── ... (52 more tables)
-│
-├── 📂 models/                      # Pre-trained model weights
-│   ├── 📄 yolov8n.pt               # YOLOv8 nano model (6.5 MB)
-│   └── 📄 table_detector.pt        # Fine-tuned table detector (52 MB)
-│
-├── 📂 notebooks/                   # Jupyter notebooks (empty - for experiments)
-├── 📂 storage/                     # Vector database storage (empty - runtime)
-├── 📂 .venv/                       # Python virtual environment
-└── 📂 .git/                        # Git version control
-
-📚 Documentation Files:
-├── 📄 Agentic RAG.pdf              # Project presentation/documentation
-└── 📄 Agentic RAG.docx             # Editable documentation
-```
-
-### Key Components Explained
-
-| Path | Purpose |
-|------|---------|
-| `app.py` | **Main application** - Streamlit UI for uploading PDFs and querying |
-| `src/vision/vision_processor.py` | **Table detection** - YOLOv8-based object detection |
-| `src/rag/` | **RAG pipeline** - Document ingestion and query engine |
-| `data/processed_tables/` | **Extracted tables** - PNG images of detected tables (55 files) |
-| `models/` | **Model weights** - YOLOv8 and custom table detector |
-| `storage/` | **Vector DB** - Runtime storage for embeddings (created on first run) |
-
-### File Size Summary
-
-- **Total Tables Extracted**: 55 tables from Apple 10-K
-- **Model Weights**: ~58 MB (YOLOv8 + custom detector)
-- **Sample PDF**: 817 KB (Apple 10-K filing)
-- **Documentation**: 6.2 MB (DOCX) + 121 KB (PDF)
-
----
-
-## �🚀 Features
-
-- ✅ **Computer Vision-First Approach**: YOLOv8 detects tables with >90% accuracy
-- ✅ **Multimodal Understanding**: Gemini reads table images like a human analyst
-- ✅ **Source Attribution**: Every answer cites the specific table/page
-- ✅ **Session Memory**: Maintains context for follow-up questions
-- ✅ **Visual Verification**: View the exact table image that was used
-- ✅ **Production-Ready**: Dockerized, environment-based config
-
----
-
-## 📦 Tech Stack
-
-| Component | Technology | Why? |
-|-----------|-----------|------|
-| **Vision** | YOLOv8 (Ultralytics) | SOTA object detection, fast inference |
-| **LLM** | Google Gemini 1.5 Flash | Native multimodal, 1M token context |
-| **Orchestration** | LlamaIndex | Superior RAG abstractions |
-| **Vector DB** | Local (SimpleVectorStore) | Zero-latency for MVP |
-| **Frontend** | Streamlit | Rapid prototyping, pure Python |
-| **Deployment** | Streamlit Cloud / Docker | Free tier + containerized |
-
----
-
-## 🛠️ Installation
-
-### Prerequisites
-
-- Python 3.10+
-- Google AI API Key ([Get one free](https://ai.google.dev/))
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/agentic-rag.git
-cd agentic-rag
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and add your GOOGLE_API_KEY
-```
-
-### Download YOLO Model Weights
-
-```bash
-python src/download_weights.py
+└── 📂 storage/                     # Local Vector Store (created after ingest)
 ```
 
 ---
 
-## 🎮 Usage
+## ✨ Key Features
 
-### Option 1: Streamlit Web App (Recommended)
-
-```bash
-streamlit run app.py
-```
-
-Then:
-
-1. Upload a financial PDF (10-K, balance sheet, etc.)
-2. Wait for table detection and indexing
-3. Ask questions like:
-   - *"What was the revenue in 2024?"*
-   - *"Compare operating expenses across years"*
-   - *"Show me the cash flow trends"*
-
-### Option 2: CLI Pipeline
-
-```bash
-# Step 1: Extract tables from PDF
-python src/vision/vision_processor.py
-
-# Step 2: Index tables with Gemini
-python src/rag/ingest.py
-
-# Step 3: Query the data
-python src/rag/query.py
-```
+- **Robust PDF Parsing**: Uses `PDFReader` for accurate text extraction (no garbage binary text).
+- **Visual Verification**: The chatbot displays the **actual images** of the tables it used to answer your question.
+- **Smart Routing**: `main.py` handles CLI commands and app launching seamlessly.
+- **Cost Effective**: Optimized to use efficient models like `gpt-4o-mini` via OpenRouter.
 
 ---
 
-## 📊 Example Results
+## 📊 Example Interaction
 
-**Input PDF**: Apple 10-K Filing (200+ pages)
+**User Query**: *"What was the total net sales in 2024?"*
 
-**Query**: *"What was Apple's total revenue in 2024 vs 2023?"*
+**AI Response**:
+> Apple's total net sales in 2024 were **$391.04 billion**.
 
-**Response**:
+**Verified Sources**:
 
-```
-According to Table 2 on page 23, Apple's total net sales were:
-- 2024: $385.6 billion
-- 2023: $383.3 billion
+- `p23_table_5.png` (Shows the Income Statement)
+- `p32_table_13.png` (Shows Segment Breakdown)
 
-This represents a 0.6% year-over-year increase.
-
-Source: data/processed_tables/p23_table_1.png
-```
-
----
-
-## 🐳 Docker Deployment
-
-```bash
-# Build image
-docker build -t financial-rag .
-
-# Run container
-docker run -p 8501:8501 \
-  -e GOOGLE_API_KEY=your_key_here \
-  financial-rag
-```
-
----
-
-## 📈 Performance Metrics
-
-| Metric | Value |
-|--------|-------|
-| Table Detection Accuracy | 92.3% |
-| Inference Time (per page) | ~180ms |
-| RAG Query Latency | <5s |
-| Supported PDF Size | Up to 50MB |
-
----
-
-## 🗺️ Roadmap
-
-- [x] YOLOv8 table detection pipeline
-- [x] Gemini multimodal parsing
-- [x] Vector indexing with LlamaIndex
-- [x] Streamlit chat interface
-- [ ] **Table-to-Excel export** (v1.1)
-- [ ] **Multi-document comparison** (v1.2)
-- [ ] **Local LLM support** (Llama 3.2 via Ollama)
-- [ ] **Chart/graph extraction** (extend beyond tables)
-
----
-
-## 🤝 Contributing
-
-This is a portfolio project, but suggestions are welcome! Open an issue or PR.
+*(The UI displays these images automatically)*
 
 ---
 
 ## 📝 License
 
-MIT License - See [LICENSE](LICENSE) for details
-
----
-
-## 👤 Author
-
-**Mukundh Jayapal**  
-AI Engineering Portfolio Project  
-[LinkedIn](#) | [GitHub](#) | [Portfolio](#)
-
----
-
-## 🙏 Acknowledgments
-
-- **Ultralytics** for YOLOv8
-- **Google** for Gemini API
-- **LlamaIndex** for RAG framework
-- **Streamlit** for rapid UI development
-
----
-
-## 📚 Learn More
-
-- [Technical Blog Post](#) - Deep dive into the architecture
-- [Demo Video](#) - 3-minute walkthrough
-- [Presentation Slides](#) - For recruiters/interviews
-
----
-
-**⭐ If this project helped you, please star the repo!**
+MIT License

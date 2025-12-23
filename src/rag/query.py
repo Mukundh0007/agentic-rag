@@ -6,7 +6,10 @@ from llama_index.core import (
     load_index_from_storage,
     VectorStoreIndex,
 )
-from openrouter_client import OpenRouterLLM, OpenRouterEmbedding
+try:
+    from src.rag.openrouter_client import OpenRouterLLM, OpenRouterEmbedding
+except ImportError:
+    from openrouter_client import OpenRouterLLM, OpenRouterEmbedding
 
 # Load env variables
 load_dotenv()
@@ -45,7 +48,7 @@ def query_system(user_query: str) -> dict:
     
     # 2. Retrieve Context
     # We use the lower-level retriever to inspect nodes manually
-    retriever = index.as_retriever(similarity_top_k=5)
+    retriever = index.as_retriever(similarity_top_k=15)
     nodes = retriever.retrieve(user_query)
     
     # 3. Process Retrieved Nodes
@@ -53,8 +56,15 @@ def query_system(user_query: str) -> dict:
     retrieved_images = []
     
     for node in nodes:
-        # Accumulate text
-        context_str += f"\n--- Source ---\n{node.text}\n"
+        # Extract Metadata
+        page = node.metadata.get("page_label", "N/A")
+        file_name = node.metadata.get("file_name", "N/A")
+        
+        # Accumulate text with clear headers for the LLM
+        if "image_path" in node.metadata:
+             context_str += f"\n--- Source: Table Image ({file_name}) ---\n{node.text}\n"
+        else:
+             context_str += f"\n--- Source: Text (Page {page}) ---\n{node.text}\n"
         
         # Check for image metadata
         if "image_path" in node.metadata:
@@ -67,7 +77,7 @@ def query_system(user_query: str) -> dict:
         "You are a financial analyst assistant. "
         "Answer the user's question based ONLY on the context provided below. "
         "The context includes text from the report and summaries of data tables. "
-        "Cite which table or page supports your answer if possible."
+        "Crucially, cite the Page Number (e.g., 'Page 22') or Table filename for every fact you state."
     )
     
     full_prompt = (
