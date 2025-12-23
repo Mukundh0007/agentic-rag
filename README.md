@@ -2,12 +2,17 @@
 
 > **Multimodal RAG system that uses Computer Vision + LLMs to analyze complex financial PDFs.**
 
-![UI Demo](demo_ui.png)
-![UI Demo](demo_2.png)
+![UI Demo](demo.png) 
+[**🚀 Try it Live on Streamlit!**](https://mukundh0007-agentic-rag.streamlit.app/)
+
+#### Demo Video:
+<video src="movie.mp4" width="100%" controls></video>
+
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.42-FF4B4B.svg)](https://streamlit.io)
 [![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.12-000000.svg)](https://llamaindex.ai)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
+
 
 ---
 
