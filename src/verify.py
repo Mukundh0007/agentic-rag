@@ -3,7 +3,6 @@ import sys
 import shutil
 from pathlib import Path
 
-# 1. Verify Imports - If these fail, the environment is broken.
 try:
     import torch
     import cv2
@@ -104,5 +103,3 @@ if __name__ == "__main__":
     verify_hardware()
     verify_yolo_download_and_inference()
     verify_llamaindex_structure()
-    print("\n🎉 Day 1 Setup Verification Complete. Project is ready for development.")
-

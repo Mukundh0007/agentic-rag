@@ -96,16 +96,35 @@ OPENROUTER_API_KEY=sk-or-v1-xxxxxxxx...
 
 ### 4. Usage
 
-We provide a central controller `main.py` for all tasks.
+We provide a central controller `main.py` for most tasks, but the computer vision pipeline requires initialization.
 
-**Step A: Ingest Data**
-Process the PDF and build the vector index.
+**Step 1: Setup Models**
+Download YOLOv8 weights and the fine-tuned table detector.
+
+```bash
+uv run python src/download_weights.py
+```
+
+**Step 2: Extract Tables (Computer Vision)**
+To verify the environment, run:
+
+```bash
+uv run python src/verify.py
+```
+
+Then, run the YOLOv8 pipeline to crop tables from your PDF.
+```bash
+uv run python src/vision/vision_processor.py
+```
+
+*(This saves images to `data/processed_tables/`)*
+
+**Step 3: Ingest Data**
+Process the PDF text and the extracted table images into the vector index.
 
 ```bash
 uv run python main.py --ingest
 ```
-
-*(This may take a few minutes as it uses Vision AI to analyze every table image).*
 
 **Step B: Launch Web App (The "Wow" Factor)**
 Start the visual chat interface.
