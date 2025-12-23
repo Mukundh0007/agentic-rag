@@ -21,7 +21,7 @@ except ImportError:
 
 # --- Configuration ---
 st.set_page_config(
-    page_title="Agentic RAG",
+    page_title="Visual Fin-Analyst",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -161,7 +161,7 @@ with st.sidebar:
 # --- Main Area: Split Screen Interface ---
 
 if not st.session_state.index_ready:
-    st.title("Agentic RAG Assistant")
+    st.title("Visual RAG Financial Analyst")
     st.caption("Multimodal Financial Intelligence • Powered by Vision AI")
     st.markdown("""
     <div style='text-align: center; padding: 50px; color: #86868b;'>

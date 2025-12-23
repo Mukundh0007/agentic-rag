@@ -1,18 +1,18 @@
-# 🔍 Visual-First Financial Document Intelligence Agent
+# 🔍 Visual RAG Financial Analyst
 
 > **Multimodal RAG system that uses Computer Vision + LLMs to analyze complex financial PDFs.**
 
-![UI Demo](demo.png) 
+![UI Demo](demo.png)
 [**🚀 Try it Live on Streamlit!**](https://mukundh0007-agentic-rag.streamlit.app/)
 
-#### Demo Video:
+#### Demo Video
+
 ![Demo Video](demo.gif)
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.42-FF4B4B.svg)](https://streamlit.io)
 [![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.12-000000.svg)](https://llamaindex.ai)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
-
 
 ---
 
@@ -69,7 +69,8 @@ Launch the full product suite.
 uv run python main.py --app
 ```
 
-* **Login**: `admin` / `admin` (Demo Mode)
+- **Login**: `admin` / `admin` (Demo Mode)
+
 - **Workflow**: Upload PDF -> Click "Process" -> Chat.
 
 ---
@@ -117,4 +118,3 @@ Access at `http://localhost:8501`.
 - **Dynamic Indexing**: Creates a fresh Knowledge Graph for every uploaded document.
 - **Dark Mode Native**: Optimized for high-contrast professional environments.
 - **Split View**: 50/50 Layout for Analyst productivity.
-
